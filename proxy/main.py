@@ -12,11 +12,26 @@ socket = context.socket(zmq.REP)
 socket.bind("tcp://*:5556")
 
 def choose_server(hash_parts):
-    print(db.users)
-    socket.send_multipart([b'prueba'])
+    number_servers = db.servers.count_documents({})
+    servers = db.servers.find({},{'address':1,'port':1,'_id':0})
+    server_itr = 0
+    server_list = list()
+    for h in hash_parts:
+        if server_itr >= number_servers:
+            server_itr = 0
+        server_list.append(servers[server_itr])
+        server_itr = server_itr + 1
+    print(server_list)
+
+    test = {
+        'servers': server_list
+    }
+    hash_parts.append(json.dumps(test).encode('utf-8'))
+
+    socket.send_multipart(hash_parts)
 
 def upload(request):
-    hash_parts = request.get('parts_hash')
+    hash_parts = request.get('hash_parts')
     choose_server(hash_parts)
 
 def decide_command(request):
@@ -29,7 +44,8 @@ def main():
     print('server is running on port 5556')
     while True:
         request = socket.recv_multipart()
-        json_request = json.loads(request[0])
+        json_request = json.loads(request.pop(-1))
+        json_request['hash_parts'] = request
         decide_command(json_request)
 
 if __name__ == '__main__':
