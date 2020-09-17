@@ -12,7 +12,7 @@ def upload(request):
     filename = request.get('filename')
     bytes_to_save = request.get('bytes')
     print('filename',filename)
-    with open('files/' + filename, "wb") as f:
+    with open(f"files/{filename}", "wb") as f:
         f.write(bytes_to_save)
     socket.send_multipart([json.dumps({'file_saved': True}).encode('utf-8')])
 

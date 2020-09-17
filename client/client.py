@@ -3,7 +3,7 @@
 import zmq 
 import json
 import sys
-from hashlib import sha256
+from hashlib import sha256 , sha224
 
 files = {}
 
@@ -33,12 +33,12 @@ def get_hash(files):
     filename = files.get('filename')
     hash_list = list()
     with open(filename,'rb') as f:
-        m = sha256()
+        m = sha224()
         _bytes = f.read(1)
         m.update(_bytes)
         hash_list.append(m.digest())
         while _bytes:
-            m = sha256()
+            m = sha224()
             _bytes = f.read(1)
             m.update(_bytes)
             hash_list.append(m.digest())
