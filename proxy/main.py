@@ -23,16 +23,26 @@ def choose_server(hash_parts):
         server_itr = server_itr + 1
     print(server_list)
 
-    test = {
-        'servers': server_list
+    response = {
+        'servers': server_list,
+        'hash_parts': hash_parts
     }
-    hash_parts.append(json.dumps(test).encode('utf-8'))
 
-    socket.send_multipart(hash_parts)
+    socket.send_multipart([json.dumps(response).encode('utf-8')])
 
 def upload(request):
     hash_parts = request.get('hash_parts')
     choose_server(hash_parts)
+
+def user_exist(username,password):
+    user = db.users.find_one({'username':username,'password':password})
+    return True if user else False
+
+def register(files):
+    username = files.get('username')
+    password = files.get('password')
+    print('')
+
 
 def decide_command(request):
     command = request.get('command')
@@ -40,12 +50,12 @@ def decide_command(request):
         upload(request)
 
 
+
 def main():
     print('server is running on port 5556')
     while True:
         request = socket.recv_multipart()
-        json_request = json.loads(request.pop(-1))
-        json_request['hash_parts'] = request
+        json_request = json.loads(request[0])
         decide_command(json_request)
 
 if __name__ == '__main__':

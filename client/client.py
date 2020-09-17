@@ -11,9 +11,10 @@ context = zmq.Context()
 socket = context.socket(zmq.REQ)
 socket.connect("tcp://localhost:5556")
 
-def upload(servers,parts_hash,filename):
-    servers_json = json.loads(servers)
-    servers_list = servers_json.get('servers')
+def upload(response_proxy,filename):
+    
+    servers_list = response_proxy.get('servers')
+    parts_hash = response_proxy.get('hash_parts')
     file = open(filename,'rb')
     for s in range(len(servers_list)):
         bytes_to_send = file.read(1)
@@ -23,7 +24,8 @@ def upload(servers,parts_hash,filename):
         socket_server = context_server.socket(zmq.REQ)
         socket_server.connect(f"tcp://{address}:{port}")
         print(parts_hash[s])
-        socket_server.send_multipart([parts_hash[s],bytes_to_send,files.get('command').encode('utf-8')])
+        print(s)
+        socket_server.send_multipart([parts_hash[s].encode('utf-8'),bytes_to_send,files.get('command').encode('utf-8')])
         response = socket_server.recv_multipart()
         print(response)
     print(len(servers_list), len(parts_hash))
@@ -33,15 +35,15 @@ def get_hash(files):
     filename = files.get('filename')
     hash_list = list()
     with open(filename,'rb') as f:
-        m = sha224()
+        m = sha256()
         _bytes = f.read(1)
         m.update(_bytes)
-        hash_list.append(m.digest())
+        hash_list.append(m.hexdigest())
         while _bytes:
-            m = sha224()
+            m = sha256()
             _bytes = f.read(1)
             m.update(_bytes)
-            hash_list.append(m.digest())
+            hash_list.append(m.hexdigest())
     return hash_list
 
 
@@ -53,14 +55,15 @@ def get_servers_proxy (args):
         return
     filename = args[1]
     files['filename'] = filename
-    hash_parts = get_hash(files)
+    files['hash_parts'] = get_hash(files)
     try:
         file = open(f"{filename}",'rb')
         bytes_to_send = file.read()
-        hash_parts.append(json.dumps(files).encode('utf-8'))
-        socket.send_multipart(hash_parts)
+        print(files)
+        socket.send_multipart([json.dumps(files).encode('utf-8')])
         response = socket.recv_multipart()
-        upload(response.pop(-1),response,filename)
+        json_response = json.loads(response[0])
+        upload(json_response,filename)
     except FileNotFoundError:
         print(f"the file {filename} doesn't exist")
    

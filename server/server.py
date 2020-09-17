@@ -9,7 +9,7 @@ port = sys.argv[1]
 socket.bind(f"tcp://*:{port}")
 
 def upload(request):
-    filename = request.get('filename')
+    filename = request.get('filename').decode('utf-8')
     bytes_to_save = request.get('bytes')
     print('filename',filename)
     with open(f"files/{filename}", "wb") as f:
